@@ -1,4 +1,4 @@
-import os
+import os, sys
 from time import sleep
 import re
 from shutil import copyfile
@@ -25,127 +25,135 @@ def screen_clear():
         print("")
 
 
-screen_clear()
+try:
+    screen_clear()
 
-print("Current Working Directory ", os.getcwd())
+    print("Current Working Directory ", os.getcwd())
 
-if os.getcwd().find('\\dist\\') >= 0 \
-        or os.getcwd().find('\\build\\') >= 0:
-    os.chdir(os.getcwd().replace('\\dist\\Make_Markdown', ''))
-    os.chdir(os.getcwd().replace('\\build\\Make_Markdown', ''))
-    print("Set Working Directory ", os.getcwd())
+    if os.getcwd().find('\\dist\\') >= 0 \
+            or os.getcwd().find('\\build\\') >= 0:
+        os.chdir(os.getcwd().replace('\\dist\\Make_Markdown', ''))
+        os.chdir(os.getcwd().replace('\\build\\Make_Markdown', ''))
+        print("Set Working Directory ", os.getcwd())
 
-screen_clear()
+    screen_clear()
 
-print(os.getcwd())
-sleep(5)
-screen_clear()
+    print(os.getcwd())
+    sleep(5)
+    screen_clear()
 
-server = input("Enter server name: ")
-database = input("Enter database name: ")
+    server = input("Enter server name: ")
+    database = input("Enter database name: ")
 
-authentication_method = input("Enter authentication type (WIN,AD,USER): ")
-authentication = ''
+    authentication_method = input("Enter authentication type (WIN,AD,USER): ")
+    authentication = ''
 
-username = input("Enter username (leave blank if using AD or WIN): ")
-password = input("Enter password (leave blank if using AD or WIN): ")
-hash_password = password[-1:].rjust(len(password), "*")[:-1] + '*'
+    username = input("Enter username (leave blank if using AD or WIN): ")
+    password = input("Enter password (leave blank if using AD or WIN): ")
+    hash_password = password[-1:].rjust(len(password), "*")[:-1] + '*'
 
-sleep(5)
-screen_clear()
-print("Making database connection...")
+    sleep(5)
+    screen_clear()
+    print("Making database connection...")
 
-if authentication_method == 'WIN':
-    authentication = "Trusted_Connection=yes"
-    authentication_method = "Trusted Connection (Windows)"
-elif authentication_method == 'AD':
-    authentication = "Authentication=ActiveDirectoryIntegrated"
-    authentication_method = "Azure Integrated AD"
-else:
-    authentication = 'UID=' + username + '; ' \
-                                         'PWD=' + password
-    authentication_method = "None / SQL username and password (username:" + username + "" \
-                                                        " / password: " + hash_password + ")"
+    if authentication_method == 'WIN':
+        authentication = "Trusted_Connection=yes"
+        authentication_method = "Trusted Connection (Windows)"
+    elif authentication_method == 'AD':
+        authentication = "Authentication=ActiveDirectoryIntegrated"
+        authentication_method = "Azure Integrated AD"
+    else:
+        authentication = 'UID=' + username + '; ' \
+                                             'PWD=' + password
+        authentication_method = "None / SQL username and password (username:" + username + "" \
+                                                            " / password: " + hash_password + ")"
 
 
-connection = pyodbc.connect(
-    'DRIVER={ODBC Driver 17 for SQL Server};SERVER=' + server + ';DATABASE=' + database + ';' + authentication)
+    connection = pyodbc.connect(
+        'DRIVER={ODBC Driver 17 for SQL Server};SERVER=' + server + ';DATABASE=' + database + ';' + authentication)
 
-sql_connection = connection.cursor()
-sql = "DECLARE @enable_tables BIT = 0;" \
-      "DECLARE @enable_views BIT = 1;" \
-      "DECLARE @enable_triggers BIT = 0;" \
-      "DECLARE @enable_procs BIT = 0;" \
-      ""
-sql = sql + open("./input/dd_query.sql", "r", encoding="utf-8").read()
+    sql_connection = connection.cursor()
+    sql = "DECLARE @enable_tables BIT = 1;" \
+          "DECLARE @enable_views BIT = 1;" \
+          "DECLARE @enable_triggers BIT = 1;" \
+          "DECLARE @enable_procs BIT = 1;" \
+          ""
+    sql = sql + open("./input/dd_query.sql", "r", encoding="utf-8").read()
 
-print("Opening connection to server[" + server.replace("[", "").replace("]", "")
-      + "], database[" + database.replace("[", "").replace("]", "") + "]...")
-print("Authentication mode: " + authentication_method)
+    print("Opening connection to server[" + server.replace("[", "").replace("]", "")
+          + "], database[" + database.replace("[", "").replace("]", "") + "]...")
+    print("Authentication mode: " + authentication_method)
 
-sql_connection.execute(sql)
+    sql_connection.execute(sql)
 
-print("Fetching metadata...")
+    print("Fetching metadata...")
 
-df = pd.DataFrame(sql_connection.fetchall())
-# print(df)
-df.to_csv('./temp/dd_output.csv', header=None, index=None, encoding="utf-8")
+    df = pd.DataFrame(sql_connection.fetchall())
+    # print(df)
+    df.to_csv('./temp/dd_output.csv', header=None, index=None, encoding="utf-8")
 
-# Clean up
+    # Clean up
 
-sql_connection.close()
+    sql_connection.close()
 
-l = ''
+    l = ''
 
-print("Creating markdown document...")
+    print("Creating markdown document...")
 
-with open("./temp/dd_output.csv", "r") as fp:
-    line = fp.readline()
-    while line:
-        l = l + (re.sub(r'^...', '', line.strip())[:-5]) + '\n'
+    with open("./temp/dd_output.csv", "r") as fp:
         line = fp.readline()
-# print(l)
+        while line:
+            l = l + (re.sub(r'^...', '', line.strip())[:-5]) + '\n'
+            line = fp.readline()
+    # print(l)
 
-o = open("./output/data_dictionary.md", "w")
-l = l.replace("```sql <br/>", "```sql \n")
-l = l.replace("\"```sql", "```sql \n")
-l = l.replace("\\r ```<br/>```", "\n")
-l = l.replace("\\t", "    ")
-l = l.replace("```<br/>", "``` \n")
-l = l.replace("``` \r\"", "``` \n")
-l = l.replace("``` \n\"", "``` \n")
+    o = open("./output/data_dictionary.md", "w")
+    l = l.replace("```sql <br/>", "```sql \n")
+    l = l.replace("\"```sql", "```sql \n")
+    l = l.replace("\\r ```<br/>```", "\n")
+    l = l.replace("\\t", "    ")
+    l = l.replace("```<br/>", "``` \n")
+    l = l.replace("``` \r\"", "``` \n")
+    l = l.replace("``` \n\"", "``` \n")
 
-o.write(l)
-o.close()
+    o.write(l)
+    o.close()
 
-print("Creating html document...")
+    print("Creating html document...")
 
-pan_args = 'pandoc output/data_dictionary.md -f gfm -t html -F mermaid-filter.cmd -o temp/dd_output.html '  ##-- toc --standalone
+    pan_args = 'pandoc output/data_dictionary.md -f gfm -t html -F mermaid-filter.cmd -o temp/dd_output.html '  ##-- toc --standalone
 
-os.system(pan_args)
+    os.system(pan_args)
 
-stylesheet = "./data_dictionary.css"
-htmlin = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"" \
-         "   \"http://www.w3.org/TR/html4/strict.dtd\">" \
-         "<HTML>" \
-         "<HEAD>" \
-         "<LINK href=\"" + stylesheet + "\" rel=\"stylesheet\" type=\"text/css\">" \
-         "</HEAD>" \
-         "<BODY> "
-htmlin = htmlin + open("./temp/dd_output.html", "r", encoding="utf-8").read()
-htmlin = htmlin + " </BODY> </HTML>"
-htmlpretty = BeautifulSoup(htmlin, features="html.parser")
-htmlout = htmlpretty.prettify()
+    stylesheet = "./data_dictionary.css"
+    htmlin = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"" \
+             "   \"http://www.w3.org/TR/html4/strict.dtd\">" \
+             "<HTML>" \
+             "<HEAD>" \
+             "<LINK href=\"" + stylesheet + "\" rel=\"stylesheet\" type=\"text/css\">" \
+             "</HEAD>" \
+             "<BODY> "
+    htmlin = htmlin + open("./temp/dd_output.html", "r", encoding="utf-8").read()
+    htmlin = htmlin + " </BODY> </HTML>"
+    htmlpretty = BeautifulSoup(htmlin, features="html.parser")
+    htmlout = htmlpretty.prettify()
 
-o = open("./output/data_dictionary.html", "w")
-o.write(htmlout)
-o.close()
+    o = open("./output/data_dictionary.html", "w")
+    o.write(htmlout)
+    o.close()
 
-print("...Attaching CSS...")
+    print("...Attaching CSS...")
 
-copyfile('./pandoc.css', './output/data_dictionary.css')
+    copyfile('./pandoc.css', './output/data_dictionary.css')
 
-sleep(5)
-print('')
-input("Press Enter to continue...")
-print("...Goodbye!")
+    print('')
+    input("Press Enter to continue...")
+    print("...Goodbye!")
+    sleep(5)
+
+except:
+    print("Unexpected error:", sys.exc_info()[0])
+    input("Press Enter to continue...")
+    print("...Goodbye!")
+    sleep(5)
+
