@@ -1,13 +1,11 @@
 SET NOCOUNT ON
 
-/* Begin Parmeters
-
+/*
 DECLARE @enable_tables BIT = 1
 DECLARE @enable_views BIT = 1
 DECLARE @enable_triggers BIT = 1
 DECLARE @enable_procs BIT = 1
-
-End Parameters */
+*/
 
 DECLARE @database_name NVARCHAR(max)
 DECLARE @schema_name NVARCHAR(max)
@@ -1022,7 +1020,7 @@ BEGIN
         SELECT REPLACE(CONCAT (
                     --'```' + 
                      '```sql' + ' <br/> ' +
-                     REPLACE(IIF(LENGTH(m.DEFINITION)>7000,SUBTRING(m.DEFINITION,1,7000)+' [...TRUNCATED...] ',m.DEFINITION), CHAR(10), ' ```<br/>``` ')
+                     REPLACE(IIF(LEN(m.DEFINITION)>7000,SUBSTRING(m.DEFINITION,1,7000)+' [...TRUNCATED...] ',m.DEFINITION), CHAR(10), ' ```<br/>``` ')
                     , ' ```<br/>'
                     ), '', '')
         FROM sys.sql_modules m

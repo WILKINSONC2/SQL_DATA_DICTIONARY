@@ -68,11 +68,11 @@ try:
         authentication_method = "None / SQL username and password (username:" + username + "" \
                                                             " / password: " + hash_password + ")"
 
-
     connection = pyodbc.connect(
         'DRIVER={ODBC Driver 17 for SQL Server};SERVER=' + server + ';DATABASE=' + database + ';' + authentication)
 
     sql_connection = connection.cursor()
+
     sql = "DECLARE @enable_tables BIT = 1;" \
           "DECLARE @enable_views BIT = 1;" \
           "DECLARE @enable_triggers BIT = 1;" \
@@ -84,11 +84,14 @@ try:
           + "], database[" + database.replace("[", "").replace("]", "") + "]...")
     print("Authentication mode: " + authentication_method)
 
+
     sql_connection.execute(sql)
+
 
     print("Fetching metadata...")
 
     df = pd.DataFrame(sql_connection.fetchall())
+
     # print(df)
     df.to_csv('./temp/dd_output.csv', header=None, index=None, encoding="utf-8")
 
