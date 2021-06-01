@@ -56,10 +56,10 @@ try:
     screen_clear()
     print("Making database connection...")
 
-    if authentication_method == 'WIN':
+    if authentication_method.upper() == 'WIN':
         authentication = "Trusted_Connection=yes"
         authentication_method = "Trusted Connection (Windows)"
-    elif authentication_method == 'AD':
+    elif authentication_method.upper() == 'AD':
         authentication = "Authentication=ActiveDirectoryIntegrated"
         authentication_method = "Azure Integrated AD"
     else:
@@ -68,8 +68,13 @@ try:
         authentication_method = "None / SQL username and password (username:" + username + "" \
                                                             " / password: " + hash_password + ")"
 
-    connection = pyodbc.connect(
-        'DRIVER={ODBC Driver 17 for SQL Server};SERVER=' + server + ';DATABASE=' + database + ';' + authentication)
+    try:
+        connection = pyodbc.connect(
+            'DRIVER={ODBC Driver 17 for SQL Server};SERVER=' + server +
+                     ';DATABASE=' + database + ';' + authentication, timeout=7200)
+        connection.timeout = 7200
+    except Exception as e:
+        print(e)
 
     sql_connection = connection.cursor()
 
@@ -84,9 +89,10 @@ try:
           + "], database[" + database.replace("[", "").replace("]", "") + "]...")
     print("Authentication mode: " + authentication_method)
 
-
-    sql_connection.execute(sql)
-
+    try:
+        sql_connection.execute(sql)
+    except Exception as e:
+        print(e)
 
     print("Fetching metadata...")
 

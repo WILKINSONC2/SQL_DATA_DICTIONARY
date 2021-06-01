@@ -1020,7 +1020,7 @@ BEGIN
         SELECT REPLACE(CONCAT (
                     --'```' + 
                      '```sql' + ' <br/> ' +
-                     REPLACE(IIF(LEN(m.DEFINITION)>7000,SUBSTRING(m.DEFINITION,1,7000)+' [...TRUNCATED...] ',m.DEFINITION), CHAR(10), ' ```<br/>``` ')
+                     REPLACE(m.DEFINITION, CHAR(10), ' ```<br/>``` ')
                     , ' ```<br/>'
                     ), '', '')
         FROM sys.sql_modules m
