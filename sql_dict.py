@@ -130,8 +130,7 @@ try:
              "   \"http://www.w3.org/TR/html4/strict.dtd\">" \
              "<HTML>" \
              "<HEAD>" \
-             #"<LINK href=\"" + stylesheet + "\" rel=\"stylesheet\" type=\"text/css\">" \
-             "<style>" + + "</style>"
+             "<LINK href=\"" + stylesheet + "\" rel=\"stylesheet\" type=\"text/css\">" \
              "</HEAD>" \
              "<BODY> "
     htmlin = htmlin + open("./temp/dd_output.html", "r", encoding="utf-8").read()
