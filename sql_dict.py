@@ -73,6 +73,8 @@ try:
             'DRIVER={ODBC Driver 17 for SQL Server};SERVER=' + server +
                      ';DATABASE=' + database + ';' + authentication, timeout=7200)
         connection.timeout = 7200
+        connection.setencoding('utf-8')
+
     except Exception as e:
         print(e)
 
