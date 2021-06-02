@@ -73,10 +73,10 @@ try:
             'DRIVER={ODBC Driver 17 for SQL Server};SERVER=' + server +
                      ';DATABASE=' + database + ';' + authentication, timeout=7200)
         connection.timeout = 7200
-        connection.setencoding('utf-8')
-        connection.setdecoding(pyodbc.SQL_CHAR, 'utf-8')
-        connection.setdecoding(pyodbc.SQL_WCHAR, 'utf-8')
-        connection.setdecoding(pyodbc.SQL_WMETADATA, 'utf-8')
+        connection.setencoding('utf-16le')
+        connection.setdecoding(pyodbc.SQL_CHAR, 'utf-16le')
+        connection.setdecoding(pyodbc.SQL_WCHAR, 'utf-16le')
+        connection.setdecoding(pyodbc.SQL_WMETADATA, 'utf-16le')
 
     except Exception as e:
         print(e)
@@ -124,6 +124,7 @@ try:
     except Exception as e:
         print(e)
 
+    print("Caching metadata...")
     df.to_csv('./temp/dd_output.csv', header=None, index=None, encoding="utf-8")
 
     # Clean up

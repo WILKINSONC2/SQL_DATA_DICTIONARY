@@ -1030,7 +1030,7 @@ BEGIN
                      '```sql' + ' <br/> ' +
                      REPLACE(m.DEFINITION, CHAR(10), ' ```<br/>``` ')
                     , ' ```<br/>'
-                    ), '', '')
+                    ), '', '') 
         FROM sys.sql_modules m
         INNER JOIN sys.all_objects so
             ON so.object_id = m.object_id
@@ -1106,6 +1106,7 @@ BEGIN
 END
 
 -- OUTPUT RESULTS
+
 SELECT line_msg
 FROM #markdown
 ORDER BY line_no ASC;
