@@ -83,11 +83,28 @@ try:
 
     sql_connection = connection.cursor()
 
-    sql = "DECLARE @enable_tables BIT = 1;" \
-          "DECLARE @enable_views BIT = 1;" \
-          "DECLARE @enable_triggers BIT = 1;" \
-          "DECLARE @enable_procs BIT = 1;" \
-          ""
+    sql = ""
+
+    if input("Document Tables? (Y/N)").lower() == "y":
+        sql = sql + "DECLARE @enable_tables BIT = 1;"
+    else:
+        sql = sql + "DECLARE @enable_tables BIT = 0;"
+
+    if input("Document Views? (Y/N)").lower() == "y":
+        sql = sql + "DECLARE @enable_views BIT = 1;"
+    else:
+        sql = sql + "DECLARE @enable_views BIT = 0;"
+
+    if input("Document Triggers? (Y/N)").lower() == "y":
+        sql = sql + "DECLARE @enable_triggers BIT = 1;"
+    else:
+        sql = sql + "DECLARE @enable_triggers BIT = 0;"
+
+    if input("Document Programming? (Y/N)").lower() == "y":
+        sql = sql + "DECLARE @enable_procs BIT = 1;"
+    else:
+        sql = sql + "DECLARE @enable_procs BIT = 0;"
+
     sql = sql + open("./input/dd_query.sql", "r", encoding="utf-8").read()
 
     print("Opening connection to server[" + server.replace("[", "").replace("]", "")
@@ -101,9 +118,12 @@ try:
 
     print("Fetching metadata...")
 
-    df = pd.DataFrame(sql_connection.fetchall())
+    try:
+        df = pd.DataFrame(sql_connection.fetchall())
+        # print(df)
+    except Exception as e:
+        print(e)
 
-    # print(df)
     df.to_csv('./temp/dd_output.csv', header=None, index=None, encoding="utf-8")
 
     # Clean up

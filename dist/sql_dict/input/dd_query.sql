@@ -11,15 +11,23 @@ DECLARE @database_name NVARCHAR(max)
 DECLARE @schema_name NVARCHAR(max)
 DECLARE @object_name NVARCHAR(max)
 
-DECLARE @markdown TABLE (
-      line_no BIGINT identity(1, 1)
-    , line_msg NVARCHAR(max)
-    )
+BEGIN TRY 
+    DROP TABLE #markdown
+END TRY 
 
-INSERT INTO @markdown (line_msg)
+BEGIN CATCH
+    DECLARE @markdownexited INT = 1
+END CATCH
+
+CREATE TABLE #markdown(
+        line_no BIGINT identity(1, 1)
+      , line_msg NVARCHAR(max)
+        )
+
+INSERT INTO #markdown (line_msg)
 SELECT '# Database: ' + UPPER(DB_NAME())
 
-INSERT INTO @markdown (line_msg)
+INSERT INTO #markdown (line_msg)
 SELECT CONCAT (
         d.name
         , ' was created on '
@@ -31,17 +39,17 @@ SELECT CONCAT (
 FROM sys.databases d
 WHERE d.name = DB_NAME()
 
-INSERT INTO @markdown (line_msg)
+INSERT INTO #markdown (line_msg)
 SELECT 'The database is ' + IIF(d.is_encrypted=1,'','NOT ') + 'encrypted, '
 FROM sys.databases d
 WHERE d.name = DB_NAME()
 
-INSERT INTO @markdown (line_msg)
+INSERT INTO #markdown (line_msg)
 SELECT 'and the database does ' + IIF(d.is_fulltext_enabled=1,'','NOT ') + 'have fulltext seach enabled.'
 FROM sys.databases d
 WHERE d.name = DB_NAME()
 
-INSERT INTO @markdown (line_msg)
+INSERT INTO #markdown (line_msg)
 SELECT 'The database was reported as being ' + d.state_desc + ' when this document was generated at ' + FORMAT(CURRENT_TIMESTAMP,'HH:mm dd/MMM/yyyy') + '. </br> </br>'
 FROM sys.databases d
 WHERE d.name = DB_NAME()
@@ -70,19 +78,19 @@ IF EXISTS (
         ) AND @enable_tables = 1
 BEGIN
 
-    INSERT INTO @markdown (line_msg)
+    INSERT INTO #markdown (line_msg)
     SELECT '## Tables'
 
-    INSERT INTO @markdown (line_msg)
+    INSERT INTO #markdown (line_msg)
     SELECT '### Overview'
 
-    INSERT INTO @markdown (line_msg)
+    INSERT INTO #markdown (line_msg)
     SELECT '|schema|table name|created date|modified date|rows|description|'
 
-    INSERT INTO @markdown (line_msg)
+    INSERT INTO #markdown (line_msg)
     SELECT '|---|---|---|---|---|---|'
 
-    INSERT INTO @markdown (line_msg)
+    INSERT INTO #markdown (line_msg)
     SELECT CONCAT (
             '|'
             , convert(VARCHAR(255), schema_name(tab.schema_id)) -- as schema_name
@@ -153,7 +161,7 @@ BEGIN
     BEGIN
 
         -- tables detail
-        INSERT INTO @markdown (line_msg)
+        INSERT INTO #markdown (line_msg)
         SELECT CONCAT (
                 '### '
                 , @schema_name
@@ -161,14 +169,14 @@ BEGIN
                 , @object_name
                 )
 
-        INSERT INTO @markdown (line_msg)
+        INSERT INTO #markdown (line_msg)
         SELECT '|column name|data type|nullable|default|primary key|foreign key|unique key|check constraint|column definition|description|'
 
-        INSERT INTO @markdown (line_msg)
+        INSERT INTO #markdown (line_msg)
         SELECT '|---|---|---|---|---|---|---|---|---|---|'
 
         -- table details
-        INSERT INTO @markdown (line_msg)
+        INSERT INTO #markdown (line_msg)
         SELECT CONCAT (
                 '|'
                 , CONVERT(NVARCHAR(MAX), col.name) -- as column_name, 
@@ -341,17 +349,17 @@ BEGIN
                     AND tab.name = @object_name
                 )
         BEGIN
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT '#### Foreign Keys'
 
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT '|constraint name|column name|originating schema|originating table|originating column|join conidtions|complex key|fk id|'
 
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT '|---|---|---|---|---|---|---|---|'
 
             -- tables fks
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT CONCAT (
                     --   '|' , schema_name(tab.schema_id) -- as table_schema_name,
                     -- , '|' , tab.name -- as table_name,
@@ -398,13 +406,13 @@ BEGIN
                 , col.name -- as column_name,
 
             -- tables fk graph
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT '```mermaid'
 
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT 'graph LR'
 
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT DISTINCT CONCAT (
                     @schema_name + '.'
                     , @object_name
@@ -429,7 +437,7 @@ BEGIN
             WHERE schema_name(tab.schema_id) = @schema_name
                 AND tab.name = @object_name
 
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT '```'
         END
 
@@ -450,17 +458,17 @@ BEGIN
                     AND i.is_unique = 1
                 )
         BEGIN
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT '#### Indexes'
 
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT '|index name|index type|key position|indexed column|included column|'
 
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT '|---|---|---|---|---|'
 
             -- tables indexes
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT CONCAT (
                     '|'
                     , i.name --as index_name
@@ -517,20 +525,20 @@ IF EXISTS (
             ON m.object_id = v.object_id
         ) AND @enable_views = 1
 BEGIN
-    INSERT INTO @markdown (line_msg)
+    INSERT INTO #markdown (line_msg)
     SELECT '## Views'
 
-    INSERT INTO @markdown (line_msg)
+    INSERT INTO #markdown (line_msg)
     SELECT '### Overview'
 
-    INSERT INTO @markdown (line_msg)
+    INSERT INTO #markdown (line_msg)
     SELECT '|schema|view name|created date|modified date|description|'
 
-    INSERT INTO @markdown (line_msg)
+    INSERT INTO #markdown (line_msg)
     SELECT '|---|---|---|---|---|'
 
     -- views overview
-    INSERT INTO @markdown (line_msg)
+    INSERT INTO #markdown (line_msg)
     SELECT CONCAT (
             '|'
             , schema_name(v.schema_id) -- as schema_name,
@@ -584,7 +592,7 @@ BEGIN
     BEGIN
 
         -- views detail
-        INSERT INTO @markdown (line_msg)
+        INSERT INTO #markdown (line_msg)
         SELECT CONCAT (
                 '### '
                 , @schema_name
@@ -592,14 +600,14 @@ BEGIN
                 , @object_name
                 )
 
-        INSERT INTO @markdown (line_msg)
+        INSERT INTO #markdown (line_msg)
         SELECT '|column name|data type|nullable|description|'
 
-        INSERT INTO @markdown (line_msg)
+        INSERT INTO #markdown (line_msg)
         SELECT '|---|---|---|---|'
 
         -- views details
-        INSERT INTO @markdown (line_msg)
+        INSERT INTO #markdown (line_msg)
         SELECT CONCAT (
                 -- '|',  schema_name(v.schema_id) -- as schema_name,
                 -- '|',  v.name -- as view_name, 
@@ -677,7 +685,7 @@ BEGIN
             , v.name -- as view_name, 
 
         -- view code
-        INSERT INTO @markdown (line_msg)
+        INSERT INTO #markdown (line_msg)
         SELECT REPLACE(CONCAT (
                     --'```' + 
                      '```sql' + ' <br/> ' +
@@ -715,13 +723,13 @@ BEGIN
                             ))
                 )
         BEGIN
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT '```mermaid'
 
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT 'graph LR'
 
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT DISTINCT CONCAT (
                     @schema_name + '.'
                     , @object_name
@@ -742,7 +750,7 @@ BEGIN
                         , @object_name
                         ))
 
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT '```'
         END
 
@@ -782,20 +790,20 @@ IF EXISTS (
         ) AND @enable_triggers = 1
     -- where so.is_ms_shipped = 0 
 BEGIN
-    INSERT INTO @markdown (line_msg)
+    INSERT INTO #markdown (line_msg)
     SELECT '## Triggers'
 
-    INSERT INTO @markdown (line_msg)
+    INSERT INTO #markdown (line_msg)
     SELECT '### Overview'
 
-    INSERT INTO @markdown (line_msg)
+    INSERT INTO #markdown (line_msg)
     SELECT '|Trigger Name|Used By|On Update|On Delete|On Insert|On After|Is Disabled|'
 
-    INSERT INTO @markdown (line_msg)
+    INSERT INTO #markdown (line_msg)
     SELECT '|---|---|---|---|---|---|---|---|---|'
 
     -- triggers overview
-    INSERT INTO @markdown (line_msg)
+    INSERT INTO #markdown (line_msg)
     SELECT CONCAT('|'
         ,USER_NAME(sobj.uid) + '.' + sobj.name,'|'
         ,s.name + '.' + OBJECT_NAME(parent_obj),'|'
@@ -841,7 +849,7 @@ BEGIN
     WHILE @@FETCH_STATUS = 0
     BEGIN
         -- triggers detail
-        INSERT INTO @markdown (line_msg)
+        INSERT INTO #markdown (line_msg)
         SELECT CONCAT (
                 '### '
                 , @schema_name
@@ -850,7 +858,7 @@ BEGIN
                 )
 
         -- view triggers
-        INSERT INTO @markdown (line_msg)
+        INSERT INTO #markdown (line_msg)
         SELECT REPLACE(CONCAT (
                     --'```' + 
                     '```sql' + ' <br/> ' +
@@ -881,13 +889,13 @@ BEGIN
                             ))
                 )
         BEGIN
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT '```mermaid'
 
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT 'graph LR'
 
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT DISTINCT CONCAT (
                     @schema_name + '.'
                     , @object_name
@@ -908,7 +916,7 @@ BEGIN
                         , @object_name
                         ))
 
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT '```'
         END
 
@@ -938,20 +946,20 @@ IF EXISTS (
         ) AND @enable_procs = 1
     -- where so.is_ms_shipped = 0 
 BEGIN
-    INSERT INTO @markdown (line_msg)
+    INSERT INTO #markdown (line_msg)
     SELECT '## Programming'
 
-    INSERT INTO @markdown (line_msg)
+    INSERT INTO #markdown (line_msg)
     SELECT '### Overview'
 
-    INSERT INTO @markdown (line_msg)
+    INSERT INTO #markdown (line_msg)
     SELECT '|type|script schema|script name|created date|modified date|description|'
 
-    INSERT INTO @markdown (line_msg)
+    INSERT INTO #markdown (line_msg)
     SELECT '|---|---|---|---|---|---|'
 
     -- programming overview
-    INSERT INTO @markdown (line_msg)
+    INSERT INTO #markdown (line_msg)
     SELECT CONCAT (
             '|'
             , so.type_desc
@@ -1007,7 +1015,7 @@ BEGIN
     WHILE @@FETCH_STATUS = 0
     BEGIN
         -- programming detail
-        INSERT INTO @markdown (line_msg)
+        INSERT INTO #markdown (line_msg)
         SELECT CONCAT (
                 '### '
                 , @schema_name
@@ -1016,7 +1024,7 @@ BEGIN
                 )
 
         -- view programming
-        INSERT INTO @markdown (line_msg)
+        INSERT INTO #markdown (line_msg)
         SELECT REPLACE(CONCAT (
                     --'```' + 
                      '```sql' + ' <br/> ' +
@@ -1055,13 +1063,13 @@ BEGIN
                             ))
                 )
         BEGIN
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT '```mermaid'
 
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT 'graph LR'
 
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT DISTINCT CONCAT (
                     @schema_name + '.'
                     , @object_name
@@ -1082,7 +1090,7 @@ BEGIN
                         , @object_name
                         ))
 
-            INSERT INTO @markdown (line_msg)
+            INSERT INTO #markdown (line_msg)
             SELECT '```'
         END
 
@@ -1099,5 +1107,5 @@ END
 
 -- OUTPUT RESULTS
 SELECT line_msg
-FROM @markdown
+FROM #markdown
 ORDER BY line_no ASC;
