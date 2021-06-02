@@ -74,6 +74,9 @@ try:
                      ';DATABASE=' + database + ';' + authentication, timeout=7200)
         connection.timeout = 7200
         connection.setencoding('utf-8')
+        connection.setdecoding(pyodbc.SQL_CHAR, 'utf-8')
+        connection.setdecoding(pyodbc.SQL_WCHAR, 'utf-8')
+        connection.setdecoding(pyodbc.SQL_WMETADATA, 'utf-8')
 
     except Exception as e:
         print(e)
