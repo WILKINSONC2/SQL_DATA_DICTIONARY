@@ -135,14 +135,14 @@ try:
 
     print("Creating markdown document...")
 
-    with open("./temp/dd_output.csv", "r") as fp:
+    with open("./temp/dd_output.csv", "r", encoding="utf-8") as fp:
         line = fp.readline()
         while line:
             l = l + (re.sub(r'^...', '', line.strip())[:-5]) + '\n'
             line = fp.readline()
-    # print(l)
+            # print(l)
 
-    o = open("./output/data_dictionary.md", "w")
+    o = open("./output/data_dictionary.md", "w", encoding="utf-8")
     l = l.replace("```sql <br/>", "```sql \n")
     l = l.replace("\"```sql", "```sql \n")
     l = l.replace("\\r ```<br/>```", "\n")
@@ -186,8 +186,9 @@ try:
     print("...Goodbye!")
     sleep(5)
 
-except:
+except Exception as error:
     print("Unexpected error:", sys.exc_info()[0])
+    print(error)
     input("Press Enter to continue...")
     print("...Goodbye!")
     sleep(5)
